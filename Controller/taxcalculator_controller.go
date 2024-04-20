@@ -62,6 +62,10 @@ func getTaxInput() (TaxInput, error) {
 		Allowances: []Allowance{
 			{
 				AllowanceType: "donation",
+				Amount:        0,
+			},
+			{
+				AllowanceType: "personal",
 				Amount:        60000,
 			},
 		},
@@ -69,7 +73,7 @@ func getTaxInput() (TaxInput, error) {
 
 	for _, allowance := range input.Allowances {
 		switch allowance.AllowanceType {
-		case "donation", "k-receipt":
+		case "donation", "k-receipt", "personal":
 
 		default:
 			return TaxInput{}, fmt.Errorf("invalid allowance type")
