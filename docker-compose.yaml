@@ -2,8 +2,13 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ktaxes
+      POSTGRES_USER: mhxzvtem
+      POSTGRES_PASSWORD: Fu3zMMOsZuiRERnb5s7gPcEHwMxukDDV
+      POSTGRES_DB: Assessment-Tax
+      DATABASE_URL: postgres://mhxzvtem:Fu3zMMOsZuiRERnb5s7gPcEHwMxukDDV@rain.db.elephantsql.com/mhxzvtem 
+      ADMIN_USERNAME: adminTax
+      ADMIN_PASSWORD: admin!
     ports:
       - '5432:5432'
+
+ 

@@ -23,11 +23,13 @@ type TaxInput struct {
 }
 
 type TaxResponse struct {
-	Tax float64 `json:"tax"`
+	Tax       float64 `json:"tax"`
+	TaxRefund float64 `json:"tax_refund,omitempty"`
 }
 
 func CalculateTax(c echo.Context) error {
-	input, err := getTaxInput()
+
+	input, err := getTaxInput(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
 	}
@@ -36,48 +38,50 @@ func CalculateTax(c echo.Context) error {
 	for _, allowance := range input.Allowances {
 		totalAllowance += allowance.Amount
 	}
-	taxableIncome := input.TotalIncome - totalAllowance - input.WHT
+
+	taxableIncome := input.TotalIncome - totalAllowance
+
 	var tax float64
 	switch {
 	case taxableIncome <= 150000:
 		tax = 0
 	case taxableIncome <= 500000:
-		tax = (taxableIncome - 150000) * 0.1
+		tax = (taxableIncome-150000)*0.1 - input.WHT
 	case taxableIncome <= 1000000:
-		tax = 35000 + (taxableIncome-500000)*0.15
+		tax = 35000 + (taxableIncome-500000)*0.15 - input.WHT
 	case taxableIncome <= 2000000:
-		tax = 135000 + (taxableIncome-1000000)*0.2
+		tax = 135000 + (taxableIncome-1000000)*0.2 - input.WHT
 	default:
-		tax = 335000 + (taxableIncome-2000000)*0.35
+		tax = 335000 + (taxableIncome-2000000)*0.35 - input.WHT
 	}
+
+	if tax < 0 {
+
+		taxRefund := -tax
+		response := TaxResponse{TaxRefund: taxRefund}
+		return c.JSON(http.StatusOK, response)
+	}
+
 	response := TaxResponse{Tax: tax}
+
 	return c.JSON(http.StatusOK, response)
 }
 
-func getTaxInput() (TaxInput, error) {
-
-	input := TaxInput{
-		TotalIncome: 500000.0,
-		WHT:         0.0,
-		Allowances: []Allowance{
-			{
-				AllowanceType: "donation",
-				Amount:        0,
-			},
-			{
-				AllowanceType: "personal",
-				Amount:        60000,
-			},
-		},
+func getTaxInput(c echo.Context) (TaxInput, error) {
+	var input TaxInput
+	if err := c.Bind(&input); err != nil {
+		return TaxInput{}, err
 	}
 
+	// Validate the AllowanceType field for each allowance
 	for _, allowance := range input.Allowances {
 		switch allowance.AllowanceType {
 		case "donation", "k-receipt", "personal":
-
+			// Valid allowance type
 		default:
 			return TaxInput{}, fmt.Errorf("invalid allowance type")
 		}
 	}
+
 	return input, nil
 }
