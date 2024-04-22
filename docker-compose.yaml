@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:16
@@ -5,10 +7,17 @@ services:
       POSTGRES_USER: mhxzvtem
       POSTGRES_PASSWORD: Fu3zMMOsZuiRERnb5s7gPcEHwMxukDDV
       POSTGRES_DB: Assessment-Tax
-      DATABASE_URL: postgres://mhxzvtem:Fu3zMMOsZuiRERnb5s7gPcEHwMxukDDV@rain.db.elephantsql.com/mhxzvtem 
-      ADMIN_USERNAME: adminTax
-      ADMIN_PASSWORD: admin!
     ports:
       - '5432:5432'
 
- 
+  app:
+    build:
+      context: .
+    environment:
+      DATABASE_URL: postgres://mhxzvtem:Fu3zMMOsZuiRERnb5s7gPcEHwMxukDDV@localhost:5432/Assessment-Tax
+      ADMIN_USERNAME: adminTax
+      ADMIN_PASSWORD: admin!
+    ports:
+      - '8080:8080'
+    depends_on:
+      - postgres
