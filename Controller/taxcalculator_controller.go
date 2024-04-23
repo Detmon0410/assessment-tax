@@ -27,6 +27,11 @@ type TaxResponse struct {
 }
 
 func CalculateTax(c echo.Context) error {
+	const personal = 60000
+	const donation_max = 100000
+	const k_receipt_max = 50000
+	const k_receipt_min = 10000
+
 	var input TaxInput
 	if err := c.Bind(&input); err != nil {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
@@ -41,12 +46,26 @@ func CalculateTax(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, Err{Message: "invalid allowance type"})
 		}
 	}
-
 	totalAllowance := 0.0
 	for _, allowance := range input.Allowances {
-		totalAllowance += allowance.Amount
+		switch allowance.AllowanceType {
+		case "donation":
+			if allowance.Amount > donation_max {
+				totalAllowance += donation_max
+			} else {
+				totalAllowance += allowance.Amount
+			}
+		case "k-receipt":
+			if allowance.Amount < k_receipt_min {
+				return c.JSON(http.StatusBadRequest, Err{Message: "k-receipt amount must be more than k-receipt min value"})
+			}
+			if allowance.Amount > k_receipt_max {
+				allowance.Amount = k_receipt_max
+			}
+			totalAllowance += allowance.Amount
+		}
 	}
-	const personal = 60000
+
 	taxableIncome := input.TotalIncome - totalAllowance - personal
 
 	var tax float64
