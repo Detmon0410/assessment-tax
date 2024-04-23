@@ -1,7 +1,6 @@
 package Controller
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -28,18 +27,27 @@ type TaxResponse struct {
 }
 
 func CalculateTax(c echo.Context) error {
-
-	input, err := getTaxInput(c)
-	if err != nil {
+	var input TaxInput
+	if err := c.Bind(&input); err != nil {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
+	}
+
+	// Validate the AllowanceType field for each allowance
+	for _, allowance := range input.Allowances {
+		switch allowance.AllowanceType {
+		case "donation", "k-receipt":
+			// Valid allowance type
+		default:
+			return c.JSON(http.StatusBadRequest, Err{Message: "invalid allowance type"})
+		}
 	}
 
 	totalAllowance := 0.0
 	for _, allowance := range input.Allowances {
 		totalAllowance += allowance.Amount
 	}
-
-	taxableIncome := input.TotalIncome - totalAllowance
+	const personal = 60000
+	taxableIncome := input.TotalIncome - totalAllowance - personal
 
 	var tax float64
 	switch {
@@ -56,32 +64,11 @@ func CalculateTax(c echo.Context) error {
 	}
 
 	if tax < 0 {
-
 		taxRefund := -tax
 		response := TaxResponse{TaxRefund: taxRefund}
 		return c.JSON(http.StatusOK, response)
 	}
 
 	response := TaxResponse{Tax: tax}
-
 	return c.JSON(http.StatusOK, response)
-}
-
-func getTaxInput(c echo.Context) (TaxInput, error) {
-	var input TaxInput
-	if err := c.Bind(&input); err != nil {
-		return TaxInput{}, err
-	}
-
-	// Validate the AllowanceType field for each allowance
-	for _, allowance := range input.Allowances {
-		switch allowance.AllowanceType {
-		case "donation", "k-receipt", "personal":
-			// Valid allowance type
-		default:
-			return TaxInput{}, fmt.Errorf("invalid allowance type")
-		}
-	}
-
-	return input, nil
 }
