@@ -27,21 +27,20 @@ type TaxResponse struct {
 	TaxRefund float64 `json:"tax_refund,omitempty"`
 }
 
+// //////////// For Story: EXP03 ///////////
 func CalculateTax(c echo.Context) error {
-	// Initialize the database connection
+
 	db, err := Model.InitializeDB()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Err{Message: "Error initializing database"})
 	}
 	defer db.Close()
 
-	// Fetch allowances from the database
 	allowancesDB, err := Model.GetAllAllowances(db)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Err{Message: "Error fetching allowances from database"})
 	}
 
-	// Retrieve the personal, donation, k_receipt_max, and k_receipt_min allowance values
 	var personal, donationMax, kReceiptMax, kReceiptMin float64
 	for _, allowance := range allowancesDB {
 		switch allowance.AllowanceType {
@@ -55,23 +54,20 @@ func CalculateTax(c echo.Context) error {
 		}
 	}
 
-	// Bind request data
 	var input TaxInput
 	if err := c.Bind(&input); err != nil {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
 	}
 
-	// Validate the AllowanceType field for each allowance
 	for _, allowance := range input.Allowances {
 		switch allowance.AllowanceType {
 		case "donation", "k-receipt":
-			// Valid allowance type
+
 		default:
 			return c.JSON(http.StatusBadRequest, Err{Message: "invalid allowance type"})
 		}
 	}
 
-	// Calculate total allowance
 	totalAllowance := 0.0
 	for _, allowance := range input.Allowances {
 		switch allowance.AllowanceType {
@@ -92,10 +88,8 @@ func CalculateTax(c echo.Context) error {
 		}
 	}
 
-	// Calculate taxable income
 	taxableIncome := input.TotalIncome - totalAllowance - personal
 
-	// Calculate tax
 	var tax float64
 	switch {
 	case taxableIncome <= 150000:
@@ -110,14 +104,12 @@ func CalculateTax(c echo.Context) error {
 		tax = 335000 + (taxableIncome-2000000)*0.35 - input.WHT
 	}
 
-	// Handle negative tax
 	if tax < 0 {
 		taxRefund := -tax
 		response := TaxResponse{TaxRefund: taxRefund}
 		return c.JSON(http.StatusOK, response)
 	}
 
-	// Prepare response
 	response := TaxResponse{Tax: tax}
 	return c.JSON(http.StatusOK, response)
 }
