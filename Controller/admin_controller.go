@@ -56,7 +56,7 @@ func UpdateAllowanceSetValuesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	if err := Model.UpdateAllowanceSetValues(db, setValue); err != nil {
+	if err := Model.UpdateKReceiptSetValues(db, setValue); err != nil {
 		http.Error(w, "Error updating allowance set values", http.StatusInternalServerError)
 		return
 	}

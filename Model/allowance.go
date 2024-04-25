@@ -17,7 +17,7 @@ type Allowance struct {
 	SetValue      int
 }
 
-func UpdateAllowanceSetValues(db *sql.DB, newValue int) error {
+func UpdateKReceiptSetValues(db *sql.DB, newValue int) error {
 
 	query := `SELECT id, min, max, set_value FROM allowance WHERE allowance_type = 'k-receipt' LIMIT 1`
 
