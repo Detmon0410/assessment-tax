@@ -22,12 +22,18 @@ type TaxInput struct {
 	Allowances  []Allowance `json:"allowances"`
 }
 
-type TaxResponse struct {
-	Tax       float64 `json:"tax"`
-	TaxRefund float64 `json:"tax_refund,omitempty"`
+type TaxLevel struct {
+	Level string  `json:"level"`
+	Tax   float64 `json:"tax"`
 }
 
-// //////////// For Story: EXP03 ///////////
+type TaxResponse struct {
+	Tax       float64    `json:"tax"`
+	TaxLevels []TaxLevel `json:"taxLevels"`
+	TaxRefund float64    `json:"taxRefund,omitempty"`
+}
+
+// //////////// For Story: EXP04 ///////////
 func CalculateTax(c echo.Context) error {
 
 	db, err := Model.InitializeDB()
@@ -91,25 +97,52 @@ func CalculateTax(c echo.Context) error {
 	taxableIncome := input.TotalIncome - totalAllowance - personal
 
 	var tax float64
+	var taxLevels []TaxLevel
+
 	switch {
 	case taxableIncome <= 150000:
 		tax = 0
+		taxLevels = append(taxLevels, TaxLevel{"0-150,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"150,001-500,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"500,001-1,000,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"1,000,001-2,000,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"2,000,001 ขึ้นไป", 0})
 	case taxableIncome <= 500000:
 		tax = (taxableIncome-150000)*0.1 - input.WHT
+		taxLevels = append(taxLevels, TaxLevel{"0-150,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"150,001-500,000", tax})
+		taxLevels = append(taxLevels, TaxLevel{"500,001-1,000,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"1,000,001-2,000,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"2,000,001 ขึ้นไป", 0})
 	case taxableIncome <= 1000000:
 		tax = 35000 + (taxableIncome-500000)*0.15 - input.WHT
+		taxLevels = append(taxLevels, TaxLevel{"0-150,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"150,001-500,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"500,001-1,000,000", tax})
+		taxLevels = append(taxLevels, TaxLevel{"1,000,001-2,000,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"2,000,001 ขึ้นไป", 0})
 	case taxableIncome <= 2000000:
 		tax = 135000 + (taxableIncome-1000000)*0.2 - input.WHT
+		taxLevels = append(taxLevels, TaxLevel{"0-150,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"150,001-500,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"500,001-1,000,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"1,000,001-2,000,000", tax})
+		taxLevels = append(taxLevels, TaxLevel{"2,000,001 ขึ้นไป", 0})
+
 	default:
 		tax = 335000 + (taxableIncome-2000000)*0.35 - input.WHT
+		taxLevels = append(taxLevels, TaxLevel{"0-150,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"150,001-500,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"500,001-1,000,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"1,000,001-2,000,000", 0})
+		taxLevels = append(taxLevels, TaxLevel{"2,000,001 ขึ้นไป", tax})
 	}
 
+	var taxRefund float64
 	if tax < 0 {
-		taxRefund := -tax
-		response := TaxResponse{TaxRefund: taxRefund}
-		return c.JSON(http.StatusOK, response)
+		taxRefund = -tax
 	}
 
-	response := TaxResponse{Tax: tax}
+	response := TaxResponse{Tax: tax, TaxLevels: taxLevels, TaxRefund: taxRefund}
 	return c.JSON(http.StatusOK, response)
 }
