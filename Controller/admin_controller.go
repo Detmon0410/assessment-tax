@@ -3,11 +3,40 @@ package Controller
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/Detmon0410/assessment-tax/Model"
+	"github.com/joho/godotenv"
 )
 
+// Load environment variables from .env file
+func init() {
+	if err := godotenv.Load(); err != nil {
+		panic("Error loading .env file")
+	}
+}
+
+func basicAuth(w http.ResponseWriter, r *http.Request) (string, bool) {
+	// Retrieve username and password from environment variables
+	adminUsername := os.Getenv("ADMIN_USERNAME")
+	adminPassword := os.Getenv("ADMIN_PASSWORD")
+
+	// Check if username and password match the provided credentials
+	username, password, ok := r.BasicAuth()
+	if !ok || username != adminUsername || password != adminPassword {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return "", false
+	}
+
+	return username, true
+}
+
 func UpdateAllowanceSetValuesHandler(w http.ResponseWriter, r *http.Request) {
+	// Check basic authentication
+	username, ok := basicAuth(w, r)
+	if !ok {
+		return
+	}
 
 	var requestData struct {
 		Amount float64 `json:"amount"`
@@ -34,8 +63,10 @@ func UpdateAllowanceSetValuesHandler(w http.ResponseWriter, r *http.Request) {
 
 	responseData := struct {
 		KReceipt float64 `json:"kReceipt"`
+		Username string  `json:"username"`
 	}{
 		KReceipt: requestData.Amount,
+		Username: username,
 	}
 
 	jsonResponse, err := json.Marshal(responseData)
