@@ -48,7 +48,7 @@ func CalculateTax(c echo.Context) error {
 			personal = float64(allowance.SetValue)
 		case "donation":
 			donationMax = float64(allowance.SetValue)
-		case "k_receipt":
+		case "k-receipt":
 			kReceiptMax = float64(allowance.SetValue)
 			kReceiptMin = float64(allowance.Min)
 		}
