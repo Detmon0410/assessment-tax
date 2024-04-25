@@ -1,38 +1,23 @@
-# # Define base image
-# ARG GO_VERSION=1.22.2
-# FROM golang:${GO_VERSION}-alpine AS build-base
 
-# # Set working directory
-# WORKDIR /app
+FROM golang:1.22.2-alpine as build-base
 
-# # Copy Go module files and download dependencies
-# COPY go.mod go.sum ./
-# RUN go mod download
+WORKDIR /app
 
-# # Copy the rest of the application source code
-# COPY . .
 
-# # Run tests (if applicable)
-# RUN CGO_ENABLED=0 go test -v
+COPY . .
 
-# # Build the Go application
-# RUN go build -o ./out/go-sample .
 
-# # Define base image for the final stage
-# FROM alpine:3.16.2
+RUN go mod download
 
-# # Set environment variables
-# ENV APP_DIR=/app
-# ENV EXECUTABLE_NAME=go-sample
 
-# # Create directory for the application
-# RUN mkdir -p ${APP_DIR}
+RUN go build -o main .
 
-# # Copy the compiled binary from the build stage
-# COPY --from=build-base /app/out/${EXECUTABLE_NAME} ${APP_DIR}/${EXECUTABLE_NAME}
 
-# # Set the working directory
-# WORKDIR ${APP_DIR}
+ENV ADMIN_USERNAME=adminTax
+ENV ADMIN_PASSWORD=admin!
+ENV DATABASE_URL=postgres://mhxzvtem:Fu3zMMOsZuiRERnb5s7gPcEHwMxukDDV@rain.db.elephantsql.com
+ENV PORT=8080
 
-# # Specify the command to run the application
-# CMD ["./${EXECUTABLE_NAME}"]
+
+
+CMD ["./main"]
