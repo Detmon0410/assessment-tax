@@ -16,7 +16,7 @@ func GetRoutes() *echo.Echo {
 	// Route for updating allowance
 	e.POST("/admin/deductions/k-receipt", func(c echo.Context) error {
 		// Call the controller function with the response writer and request from the context
-		Controller.UpdateAllowanceSetValuesHandler(c.Response(), c.Request())
+		Controller.UpdateKReceiptHandler(c.Response(), c.Request())
 		return nil
 	})
 

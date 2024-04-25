@@ -31,7 +31,7 @@ func basicAuth(w http.ResponseWriter, r *http.Request) (string, bool) {
 	return username, true
 }
 
-func UpdateAllowanceSetValuesHandler(w http.ResponseWriter, r *http.Request) {
+func UpdateKReceiptHandler(w http.ResponseWriter, r *http.Request) {
 	// Check basic authentication
 	username, ok := basicAuth(w, r)
 	if !ok {
