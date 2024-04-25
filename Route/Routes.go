@@ -19,6 +19,11 @@ func GetRoutes() *echo.Echo {
 		Controller.UpdateKReceiptHandler(c.Response(), c.Request())
 		return nil
 	})
+	e.POST("/admin/deductions/personal", func(c echo.Context) error {
+		// Call the controller function with the response writer and request from the context
+		Controller.UpdatePersonalHandler(c.Response(), c.Request())
+		return nil
+	})
 
 	// Route for retrieving all allowances
 	e.GET("/admin/allowances", func(c echo.Context) error {
