@@ -57,7 +57,14 @@ func UpdateKReceiptHandler(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	if err := Model.UpdateKReceiptSetValues(db, setValue); err != nil {
-		http.Error(w, "Error updating allowance set values", http.StatusInternalServerError)
+		switch err {
+		case Model.ErrNotFound:
+			http.Error(w, "Allowance record not found", http.StatusNotFound)
+		case Model.ErrInvalidRange:
+			http.Error(w, "New value is not within the allowed range", http.StatusBadRequest)
+		default:
+			http.Error(w, "Error updating allowance set values", http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -106,7 +113,14 @@ func UpdatePersonalHandler(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	if err := Model.UpdatePersonalSetValues(db, setValue); err != nil {
-		http.Error(w, "Error updating allowance set values", http.StatusInternalServerError)
+		switch err {
+		case Model.ErrNotFound:
+			http.Error(w, "Allowance record not found", http.StatusNotFound)
+		case Model.ErrInvalidRange:
+			http.Error(w, "New value is not within the allowed range", http.StatusBadRequest)
+		default:
+			http.Error(w, "Error updating allowance set values", http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -130,7 +144,6 @@ func UpdatePersonalHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAllAllowancesHandler(w http.ResponseWriter, r *http.Request) {
-
 	db, err := Model.InitializeDB()
 	if err != nil {
 		http.Error(w, "Error initializing database", http.StatusInternalServerError)

@@ -1,11 +1,15 @@
-// File: Model/allowance.go
-
 package Model
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
+)
+
+// Custom errors
+var (
+	ErrNotFound     = errors.New("record not found")
+	ErrInvalidRange = errors.New("new value is not within the allowed range")
 )
 
 // Allowance represents a record in the allowance table
@@ -17,58 +21,43 @@ type Allowance struct {
 	SetValue      int
 }
 
+// updateAllowanceSetValues updates the set value of an allowance record based on the given allowance type
+func updateAllowanceSetValues(db *sql.DB, allowanceType string, newValue int) error {
+	query := fmt.Sprintf(`SELECT id, min, max, set_value FROM allowance WHERE allowance_type = '%s' LIMIT 1`, allowanceType)
+
+	var allowance Allowance
+	err := db.QueryRow(query).Scan(&allowance.ID, &allowance.Min, &allowance.Max, &allowance.SetValue)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve allowance record: %v", err)
+	}
+
+	if newValue < allowance.Min || newValue > allowance.Max {
+		return ErrInvalidRange
+	}
+
+	updateQuery := `UPDATE allowance SET set_value = $1 WHERE id = $2`
+
+	_, err = db.Exec(updateQuery, newValue, allowance.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update allowance set values: %v", err)
+	}
+
+	fmt.Println("Allowance set values updated successfully")
+
+	return nil
+}
+
+// UpdateKReceiptSetValues updates the set value of a k-receipt allowance record
 func UpdateKReceiptSetValues(db *sql.DB, newValue int) error {
-
-	query := `SELECT id, min, max, set_value FROM allowance WHERE allowance_type = 'k-receipt' LIMIT 1`
-
-	var allowance Allowance
-	err := db.QueryRow(query).Scan(&allowance.ID, &allowance.Min, &allowance.Max, &allowance.SetValue)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve allowance record: %v", err)
-	}
-
-	if newValue < allowance.Min || newValue > allowance.Max {
-		return errors.New("newValue is not within the allowed range")
-	}
-
-	updateQuery := `UPDATE allowance SET set_value = $1 WHERE id = $2`
-
-	_, err = db.Exec(updateQuery, newValue, allowance.ID)
-	if err != nil {
-		return fmt.Errorf("failed to update allowance set values: %v", err)
-	}
-
-	fmt.Println("Allowance set values updated successfully")
-
-	return nil
+	return updateAllowanceSetValues(db, "k-receipt", newValue)
 }
 
+// UpdatePersonalSetValues updates the set value of a personal allowance record
 func UpdatePersonalSetValues(db *sql.DB, newValue int) error {
-
-	query := `SELECT id, min, max, set_value FROM allowance WHERE allowance_type = 'personal' LIMIT 1`
-
-	var allowance Allowance
-	err := db.QueryRow(query).Scan(&allowance.ID, &allowance.Min, &allowance.Max, &allowance.SetValue)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve allowance record: %v", err)
-	}
-
-	if newValue < allowance.Min || newValue > allowance.Max {
-		return errors.New("newValue is not within the allowed range")
-	}
-
-	updateQuery := `UPDATE allowance SET set_value = $1 WHERE id = $2`
-
-	_, err = db.Exec(updateQuery, newValue, allowance.ID)
-	if err != nil {
-		return fmt.Errorf("failed to update allowance set values: %v", err)
-	}
-
-	fmt.Println("Allowance set values updated successfully")
-
-	return nil
+	return updateAllowanceSetValues(db, "personal", newValue)
 }
 
+// GetAllAllowances retrieves all allowances from the database
 func GetAllAllowances(db *sql.DB) ([]Allowance, error) {
 	query := `SELECT id, allowance_type, min, max, set_value FROM allowance`
 
