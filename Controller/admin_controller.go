@@ -57,3 +57,33 @@ func UpdateAllowanceSetValuesHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
 }
+
+// GetAllAllowancesHandler retrieves all records from the allowance table
+func GetAllAllowancesHandler(w http.ResponseWriter, r *http.Request) {
+	// Initialize the database connection
+	db, err := Model.InitializeDB()
+	if err != nil {
+		http.Error(w, "Error initializing database", http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	// Fetch all allowances from the database
+	allowances, err := Model.GetAllAllowances(db)
+	if err != nil {
+		http.Error(w, "Error fetching allowances", http.StatusInternalServerError)
+		return
+	}
+
+	// Marshal allowances into JSON
+	jsonResponse, err := json.Marshal(allowances)
+	if err != nil {
+		http.Error(w, "Error creating JSON response", http.StatusInternalServerError)
+		return
+	}
+
+	// Set Content-Type header and write the response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+}
