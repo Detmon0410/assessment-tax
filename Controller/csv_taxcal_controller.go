@@ -11,12 +11,14 @@ const personalDeduction = 60000
 
 type TaxRecord struct {
 	TotalIncome float64 `json:"totalIncome"`
-	WHT         float64 `json:"wht"`
-	Donation    float64 `json:"donation"`
-	Personal    float64 `json:"personal"`
 	Tax         float64 `json:"tax"`
 }
 
+type TaxResponseCSV struct {
+	Taxes []TaxRecord `json:"taxes"`
+}
+
+// UploadCSVHandler handles CSV file upload and tax calculation
 func UploadCSVHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse the multipart form
 	err := r.ParseMultipartForm(10 << 20) // 10 MB max file size
@@ -26,23 +28,29 @@ func UploadCSVHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the file from the request
-	file, header, err := r.FormFile("taxFile")
+	taxFile, taxHeader, err := r.FormFile("taxFile")
 	if err != nil {
 		http.Error(w, "Unable to get file", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer taxFile.Close()
 
 	// Check if the file name is "taxes.csv"
-	if header.Filename != "taxes.csv" {
+	if taxHeader.Filename != "taxes.csv" {
 		http.Error(w, "Invalid file name. File name must be 'taxes.csv'", http.StatusBadRequest)
 		return
 	}
 
 	// Read the file content
-	fileBytes, err := csv.NewReader(file).ReadAll()
+	fileBytes, err := csv.NewReader(taxFile).ReadAll()
 	if err != nil {
 		http.Error(w, "Unable to read file", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if the file is empty
+	if len(fileBytes) == 0 {
+		http.Error(w, "Empty file", http.StatusBadRequest)
 		return
 	}
 
@@ -53,6 +61,7 @@ func UploadCSVHandler(w http.ResponseWriter, r *http.Request) {
 			// Skip header row
 			continue
 		}
+
 		// Parse CSV values
 		totalIncome, _ := strconv.ParseFloat(row[0], 64)
 		wht, _ := strconv.ParseFloat(row[1], 64)
@@ -82,26 +91,18 @@ func UploadCSVHandler(w http.ResponseWriter, r *http.Request) {
 		// Create tax record
 		record := TaxRecord{
 			TotalIncome: totalIncome,
-			WHT:         wht,
-			Donation:    donation,
-			Personal:    personalDeduction,
 			Tax:         tax,
 		}
 		taxRecords = append(taxRecords, record)
 	}
 
-	// Convert tax records to JSON
-	var taxes []map[string]interface{}
-	for _, record := range taxRecords {
-		tax := map[string]interface{}{
-			"totalIncome": record.TotalIncome,
-			"tax":         record.Tax,
-		}
-		taxes = append(taxes, tax)
+	// Create response object
+	response := TaxResponseCSV{
+		Taxes: taxRecords,
 	}
-	responseData := map[string][]map[string]interface{}{"taxes": taxes}
 
-	jsonData, err := json.Marshal(responseData)
+	// Convert response object to JSON
+	jsonData, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, "Unable to convert to JSON", http.StatusInternalServerError)
 		return
