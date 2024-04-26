@@ -33,7 +33,7 @@ type TaxResponse struct {
 	TaxRefund float64    `json:"taxRefund,omitempty"`
 }
 
-// //////////// For Story: EXP04 ///////////
+// //////////// For Story: EXP07///////////
 func CalculateTax(c echo.Context) error {
 
 	db, err := Model.InitializeDB()
