@@ -32,5 +32,12 @@ func GetRoutes() *echo.Echo {
 		return nil
 	})
 
+	// Route for uploading CSV and calculating tax
+	e.POST("/tax/calculations/upload-csv", func(c echo.Context) error {
+		// Call the controller function to handle CSV upload and tax calculation
+		Controller.UploadCSVHandler(c.Response(), c.Request())
+		return nil
+	})
+
 	return e
 }
