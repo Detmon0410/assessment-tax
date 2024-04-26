@@ -6,10 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Detmon0410/assessment-tax/Model"
 	"github.com/labstack/echo/v4"
 )
-
-const personalDeduction = 60000
 
 type TaxRecord struct {
 	TotalIncome float64 `json:"totalIncome"`
@@ -22,8 +21,27 @@ type TaxResponseCSV struct {
 
 // UploadCSVHandler handles CSV file upload and tax calculation
 func UploadCSVHandler(c echo.Context) error {
+
+	db, err := Model.InitializeDB()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Error initializing database"})
+	}
+	defer db.Close()
+
+	allowancesDB, err := Model.GetAllAllowances(db)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Error fetching allowances from database"})
+	}
+
+	var personal float64
+	for _, allowance := range allowancesDB {
+		if allowance.AllowanceType == "personal" {
+			personal = float64(allowance.SetValue)
+		}
+	}
+
 	// Parse the multipart form
-	err := c.Request().ParseMultipartForm(10 << 20) // 10 MB max file size
+	err = c.Request().ParseMultipartForm(10 << 20) // 10 MB max file size
 	if err != nil {
 		return c.String(http.StatusBadRequest, "Unable to parse form")
 	}
@@ -65,7 +83,7 @@ func UploadCSVHandler(c echo.Context) error {
 		donation, _ := strconv.ParseFloat(row[2], 64)
 
 		// Calculate taxable income
-		taxableIncome := totalIncome - donation - wht - personalDeduction
+		taxableIncome := totalIncome - donation - wht - personal
 		if taxableIncome < 0 {
 			taxableIncome = 0 // Ensure taxable income is non-negative
 		}
