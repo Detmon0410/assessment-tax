@@ -25,19 +25,8 @@ func GetRoutes() *echo.Echo {
 		return nil
 	})
 
-	// Route for retrieving all allowances
-	e.GET("/admin/allowances", func(c echo.Context) error {
-		// Call the controller function to get all allowances
-		Controller.GetAllAllowancesHandler(c.Response(), c.Request())
-		return nil
-	})
-
 	// Route for uploading CSV and calculating tax
-	e.POST("/tax/calculations/upload-csv", func(c echo.Context) error {
-		// Call the controller function to handle CSV upload and tax calculation
-		Controller.UploadCSVHandler(c.Response(), c.Request())
-		return nil
-	})
+	e.POST("/tax/calculations/upload-csv", Controller.UploadCSVHandler)
 
 	return e
 }

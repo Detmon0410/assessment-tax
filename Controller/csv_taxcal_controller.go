@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+
+	"github.com/labstack/echo/v4"
 )
 
 const personalDeduction = 60000
@@ -19,39 +21,34 @@ type TaxResponseCSV struct {
 }
 
 // UploadCSVHandler handles CSV file upload and tax calculation
-func UploadCSVHandler(w http.ResponseWriter, r *http.Request) {
+func UploadCSVHandler(c echo.Context) error {
 	// Parse the multipart form
-	err := r.ParseMultipartForm(10 << 20) // 10 MB max file size
+	err := c.Request().ParseMultipartForm(10 << 20) // 10 MB max file size
 	if err != nil {
-		http.Error(w, "Unable to parse form", http.StatusBadRequest)
-		return
+		return c.String(http.StatusBadRequest, "Unable to parse form")
 	}
 
 	// Get the file from the request
-	taxFile, taxHeader, err := r.FormFile("taxFile")
+	taxFile, taxHeader, err := c.Request().FormFile("taxFile")
 	if err != nil {
-		http.Error(w, "Unable to get file", http.StatusBadRequest)
-		return
+		return c.String(http.StatusBadRequest, "Unable to get file")
 	}
 	defer taxFile.Close()
 
 	// Check if the file name is "taxes.csv"
 	if taxHeader.Filename != "taxes.csv" {
-		http.Error(w, "Invalid file name. File name must be 'taxes.csv'", http.StatusBadRequest)
-		return
+		return c.String(http.StatusBadRequest, "Invalid file name. File name must be 'taxes.csv'")
 	}
 
 	// Read the file content
 	fileBytes, err := csv.NewReader(taxFile).ReadAll()
 	if err != nil {
-		http.Error(w, "Unable to read file", http.StatusInternalServerError)
-		return
+		return c.String(http.StatusInternalServerError, "Unable to read file")
 	}
 
 	// Check if the file is empty
 	if len(fileBytes) == 0 {
-		http.Error(w, "Empty file", http.StatusBadRequest)
-		return
+		return c.String(http.StatusBadRequest, "Empty file")
 	}
 
 	// Process CSV data
@@ -104,12 +101,9 @@ func UploadCSVHandler(w http.ResponseWriter, r *http.Request) {
 	// Convert response object to JSON
 	jsonData, err := json.Marshal(response)
 	if err != nil {
-		http.Error(w, "Unable to convert to JSON", http.StatusInternalServerError)
-		return
+		return c.String(http.StatusInternalServerError, "Unable to convert to JSON")
 	}
 
 	// Write JSON response
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonData)
+	return c.JSONBlob(http.StatusOK, jsonData)
 }
