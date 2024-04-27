@@ -33,6 +33,14 @@ type TaxResponse struct {
 	TaxRefund float64    `json:"taxRefund,omitempty"`
 }
 
+func CalculateTaxHandler(w http.ResponseWriter, r *http.Request) {
+	c := echo.New().NewContext(r, w)
+	err := CalculateTax(c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 // //////////// For Story: EXP07///////////
 func CalculateTax(c echo.Context) error {
 

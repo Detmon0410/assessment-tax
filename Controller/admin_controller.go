@@ -12,7 +12,10 @@ import (
 // Load environment variables from .env file
 func init() {
 	if err := godotenv.Load(); err != nil {
-		panic("Error loading .env file")
+		// If error loading from default location, try loading from "../.env"
+		if err := godotenv.Load("../.env"); err != nil {
+			panic("Error loading .env file")
+		}
 	}
 }
 

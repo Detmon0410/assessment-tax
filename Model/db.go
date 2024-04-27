@@ -15,7 +15,10 @@ import (
 func InitializeDB() (*sql.DB, error) {
 	// Load environment variables from .env file
 	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("error loading .env file: %v", err)
+		// If when testing, try loading from "../.env"
+		if err := godotenv.Load("../.env"); err != nil {
+			panic("Error loading .env file")
+		}
 	}
 
 	// Retrieve the database URL from the environment variable
