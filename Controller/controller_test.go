@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Detmon0410/assessment-tax/Model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,4 +53,38 @@ func TestCalculateTax_CustomInput(t *testing.T) {
 	// Assert that the calculated tax matches the expected value
 	expectedTax := 14000.0
 	assert.Equal(t, expectedTax, response.Tax)
+}
+
+// //////////////////// Test Admin Authentication //////////////////////
+func TestBasicAuth(t *testing.T) {
+	// Mock a request with basic authentication
+	req := httptest.NewRequest("GET", "/", nil)
+	req.SetBasicAuth("adminTax", "admin!")
+
+	// Create a ResponseRecorder to record the response
+	rr := httptest.NewRecorder()
+
+	// Call the basicAuth function and assert the result
+	username, ok := basicAuth(rr, req)
+	assert.True(t, ok)
+	assert.Equal(t, "adminTax", username)
+}
+
+func TestGetAllAllowancesHandler(t *testing.T) {
+	// Create a request
+	req := httptest.NewRequest("GET", "/get-all-allowances", nil)
+
+	// Create a ResponseRecorder to record the response
+	rr := httptest.NewRecorder()
+
+	// Call the handler function
+	GetAllAllowancesHandler(rr, req)
+
+	// Check the status code
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	// Decode the response body and perform assertions
+	var allowances []Model.Allowance
+	json.NewDecoder(rr.Body).Decode(&allowances)
+	assert.NotEmpty(t, allowances)
 }
