@@ -128,10 +128,8 @@ func UpdatePersonalHandler(w http.ResponseWriter, r *http.Request) {
 
 	responseData := struct {
 		PersonalDeduction float64 `json:"personalDeduction"`
-		Username          string  `json:"username"`
 	}{
 		PersonalDeduction: requestData.Amount,
-		Username:          username,
 	}
 
 	jsonResponse, err := json.Marshal(responseData)
@@ -139,7 +137,7 @@ func UpdatePersonalHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error creating JSON response", http.StatusInternalServerError)
 		return
 	}
-
+	log.Println("admin:", username)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
