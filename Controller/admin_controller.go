@@ -2,6 +2,7 @@ package Controller
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 
@@ -73,10 +74,8 @@ func UpdateKReceiptHandler(w http.ResponseWriter, r *http.Request) {
 
 	responseData := struct {
 		KReceipt float64 `json:"kReceipt"`
-		Username string  `json:"username"`
 	}{
 		KReceipt: requestData.Amount,
-		Username: username,
 	}
 
 	jsonResponse, err := json.Marshal(responseData)
@@ -84,7 +83,7 @@ func UpdateKReceiptHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error creating JSON response", http.StatusInternalServerError)
 		return
 	}
-
+	log.Println("admin:", username)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
