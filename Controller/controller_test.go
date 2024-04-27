@@ -3,11 +3,16 @@ package Controller
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/Detmon0410/assessment-tax/Model"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -87,4 +92,72 @@ func TestGetAllAllowancesHandler(t *testing.T) {
 	var allowances []Model.Allowance
 	json.NewDecoder(rr.Body).Decode(&allowances)
 	assert.NotEmpty(t, allowances)
+}
+
+func TestUploadCSVHandler(t *testing.T) {
+	// Test cases
+	tests := []struct {
+		Name         string
+		RequestBody  string
+		ExpectedCode int
+		ExpectedBody string
+	}{
+		{
+			Name:         "ValidInput",
+			RequestBody:  "totalIncome,wht,donation\n500000,0,0\n600000,40000,20000\n750000,50000,15000",
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: `{"taxes":[{"totalIncome":500000,"tax":29000},{"totalIncome":600000,"tax":33000},{"totalIncome":750000,"tax":53750}]}`,
+		},
+		// Add more test cases for edge cases, invalid input, etc.
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			// Create a new echo instance
+			e := echo.New()
+
+			// Create a buffer to write the form data
+			body := &bytes.Buffer{}
+			writer := multipart.NewWriter(body)
+
+			// Write the CSV data to the form field
+			formField, err := writer.CreateFormFile("taxFile", "taxes.csv")
+			if err != nil {
+				t.Fatal(err)
+			}
+			csvData := strings.NewReader(test.RequestBody)
+			io.Copy(formField, csvData)
+
+			// Close the multipart writer
+			writer.Close()
+
+			// Create a request object with the multipart form data
+			req := httptest.NewRequest(http.MethodPost, "/upload", body)
+			req.Header.Set(echo.HeaderContentType, writer.FormDataContentType())
+
+			// Create a response recorder
+			rec := httptest.NewRecorder()
+
+			// Create a context from the request and recorder
+			c := e.NewContext(req, rec)
+
+			// Call the handler function
+			if err := UploadCSVHandler(c); err != nil {
+				t.Fatal(err)
+			}
+
+			// Check the response status code
+			if rec.Code != test.ExpectedCode {
+				t.Errorf("Expected status code %d but got %d", test.ExpectedCode, rec.Code)
+			}
+
+			// Check the response body
+			actualBody := rec.Body.String()
+			if actualBody != test.ExpectedBody {
+				t.Errorf("Expected body %q but got %q", test.ExpectedBody, actualBody)
+				// Print the response body for further inspection
+				fmt.Println("Response body:", actualBody)
+			}
+		})
+	}
 }
