@@ -21,3 +21,5 @@ services:
       POSTGRES_USER: mhxzvtem
       POSTGRES_PASSWORD: Fu3zMMOsZuiRERnb5s7gPcEHwMxukDDV
       POSTGRES_DB: Assessment-Tax
+    ports:
+      - '5432:5432'
