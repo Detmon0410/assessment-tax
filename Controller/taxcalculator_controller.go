@@ -29,18 +29,20 @@ type TaxResponse struct {
 
 // //////////// For Story: EXP03 ///////////
 func CalculateTax(c echo.Context) error {
-
+	// Initialize the database connection
 	db, err := Model.InitializeDB()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Err{Message: "Error initializing database"})
 	}
 	defer db.Close()
 
+	// Fetch allowances from the database
 	allowancesDB, err := Model.GetAllAllowances(db)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Err{Message: "Error fetching allowances from database"})
 	}
 
+	// Retrieve the personal, donation, k_receipt_max, and k_receipt_min allowance values
 	var personal, donationMax, kReceiptMax, kReceiptMin float64
 	for _, allowance := range allowancesDB {
 		switch allowance.AllowanceType {
@@ -54,22 +56,28 @@ func CalculateTax(c echo.Context) error {
 		}
 	}
 
+	// Bind request data
 	var input TaxInput
 	if err := c.Bind(&input); err != nil {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
 	}
 
+	// Validate the AllowanceType field for each allowance
 	for _, allowance := range input.Allowances {
 		switch allowance.AllowanceType {
 		case "donation", "k-receipt":
-
+			// Valid allowance type
 		default:
 			return c.JSON(http.StatusBadRequest, Err{Message: "invalid allowance type"})
 		}
 	}
+
 	// Validate TotalIncome and WHT
 	if input.TotalIncome <= 0 {
 		return c.JSON(http.StatusBadRequest, Err{Message: "TotalIncome must be greater than 0"})
+	}
+	if input.WHT < 0 {
+		return c.JSON(http.StatusBadRequest, Err{Message: "WHT cannot be less than 0"})
 	}
 	if input.WHT > input.TotalIncome {
 		return c.JSON(http.StatusBadRequest, Err{Message: "WHT cannot be greater than TotalIncome"})
