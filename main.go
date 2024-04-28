@@ -14,15 +14,19 @@ import (
 
 func main() {
 
+	// Accessing environment variables
+	port := os.Getenv("PORT")
+
+	// Creating routes
 	echo := Route.GetRoutes()
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + port,
 		Handler: echo,
 	}
 
 	go func() {
-		fmt.Println("Server is running on port 8080...")
+		fmt.Printf("Server is running on port %s...\n", port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			fmt.Printf("Could not start server: %v\n", err)
 			os.Exit(1)

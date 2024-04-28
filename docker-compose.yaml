@@ -1,24 +1,23 @@
 version: '3.8'
 
 services:
-  my-go-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "9090:8080"
+  app:
+    build: .
     environment:
-      - PORT=8080  
-      - ADMIN_USERNAME=adminTax
-      - ADMIN_PASSWORD=admin!
-      - postgres
-
-  postgres:
-    image: postgres:12.12
-    environment:
-      POSTGRES_DB: Assessment-Tax
-      POSTGRES_USER: mhxzvtem
-      POSTGRES_PASSWORD: Fu3zMMOsZuiRERnb5s7gPcEHwMxukDDV
+      GIN_MODE: release
+      PORT: 8080
+      ADMIN_USERNAME: adminTax
+      ADMIN_PASSWORD: admin!
+      
       DATABASE_URL: postgres://mhxzvtem:Fu3zMMOsZuiRERnb5s7gPcEHwMxukDDV@rain.db.elephantsql.com
     ports:
-      - "5432:5432"
+      - "8080:8080"
+    depends_on:
+      - db
+
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: mhxzvtem
+      POSTGRES_PASSWORD: Fu3zMMOsZuiRERnb5s7gPcEHwMxukDDV
+      POSTGRES_DB: Assessment-Tax
