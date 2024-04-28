@@ -71,6 +71,22 @@ func CalculateTax(c echo.Context) error {
 		}
 	}
 
+	// Validate TotalIncome, WHT, and Allowances
+	if input.TotalIncome <= 0 {
+		return c.JSON(http.StatusBadRequest, Err{Message: "TotalIncome must be greater than 0"})
+	}
+	if input.WHT < 0 {
+		return c.JSON(http.StatusBadRequest, Err{Message: "WHT cannot be less than 0"})
+	}
+	if input.WHT > input.TotalIncome {
+		return c.JSON(http.StatusBadRequest, Err{Message: "WHT cannot be greater than TotalIncome"})
+	}
+	for _, allowance := range input.Allowances {
+		if allowance.Amount < 0 {
+			return c.JSON(http.StatusBadRequest, Err{Message: "Allowance amount cannot be less than 0"})
+		}
+	}
+
 	// Calculate total allowance
 	totalAllowance := 0.0
 	for _, allowance := range input.Allowances {
@@ -90,6 +106,11 @@ func CalculateTax(c echo.Context) error {
 			}
 			totalAllowance += allowance.Amount
 		}
+	}
+
+	// Check if WHT is greater than TotalIncome
+	if input.WHT > input.TotalIncome {
+		return c.JSON(http.StatusBadRequest, Err{Message: "WHT cannot be greater than TotalIncome"})
 	}
 
 	// Calculate taxable income
