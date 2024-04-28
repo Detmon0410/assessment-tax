@@ -67,6 +67,13 @@ func CalculateTax(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, Err{Message: "invalid allowance type"})
 		}
 	}
+	// Validate TotalIncome and WHT
+	if input.TotalIncome <= 0 {
+		return c.JSON(http.StatusBadRequest, Err{Message: "TotalIncome must be greater than 0"})
+	}
+	if input.WHT > input.TotalIncome {
+		return c.JSON(http.StatusBadRequest, Err{Message: "WHT cannot be greater than TotalIncome"})
+	}
 
 	totalAllowance := 0.0
 	for _, allowance := range input.Allowances {
