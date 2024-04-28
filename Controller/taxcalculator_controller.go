@@ -72,6 +72,16 @@ func CalculateTax(c echo.Context) error {
 	if err := c.Bind(&input); err != nil {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
 	}
+	// Validate TotalIncome and WHT
+	if input.TotalIncome <= 0 {
+		return c.JSON(http.StatusBadRequest, Err{Message: "TotalIncome must be greater than 0"})
+	}
+	if input.WHT < 0 {
+		return c.JSON(http.StatusBadRequest, Err{Message: "WHT cannot be less than 0"})
+	}
+	if input.WHT > input.TotalIncome {
+		return c.JSON(http.StatusBadRequest, Err{Message: "WHT cannot be greater than TotalIncome"})
+	}
 
 	for _, allowance := range input.Allowances {
 		switch allowance.AllowanceType {
